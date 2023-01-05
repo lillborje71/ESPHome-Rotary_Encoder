@@ -1,5 +1,6 @@
 #ESPHome-Rotary_encoder
-My way to colrol 3 ledstrips with a rotary encoder sensor.
+
+My way to control 3 ledstrips with a rotary encoder sensor.
 
 #Hardware
 1x ESP32 board.
