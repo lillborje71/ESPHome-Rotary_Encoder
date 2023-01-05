@@ -12,8 +12,10 @@ logger:
   level: DEBUG
 
 # Enable Home Assistant API
+
 api:
   reboot_timeout: 0s
+
 ota:
 
 web_server:
