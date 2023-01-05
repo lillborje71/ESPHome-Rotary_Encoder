@@ -1,0 +1,158 @@
+# ESPHome-Rotary_Encoder
+esphome:
+  name: lab-unit
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+# Enable logging
+logger:
+  level: DEBUG
+
+# Enable Home Assistant API
+api:
+  reboot_timeout: 0s
+ota:
+
+web_server:
+  port: 80
+
+wifi:
+  reboot_timeout: 0s
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Lab-unit Fallback Hotspot"
+    password: "9HDgdxg22hV5"
+
+captive_portal:
+
+script:
+  id: service_script
+  then:
+    - light.toggle: test_fastled
+    - light.toggle: test_fastled2
+    - light.toggle: test_fastled3
+    - sensor.rotary_encoder.set_value:
+        id: dim_volvo_leds
+        value: 100
+
+sensor:
+  - platform: rotary_encoder
+    name: "Dim Volvo Leds"
+    id: dim_volvo_leds
+    pin_a: GPIO23
+    pin_b: GPIO22
+    min_value: 0
+    max_value: 100
+    resolution: 1
+    restore_mode: RESTORE_DEFAULT_ZERO
+    filters:
+      - throttle: 100ms  
+    on_clockwise:
+      - lambda: |-
+          float DimUp = id(test_fastled).current_values.get_brightness();
+          if (DimUp <= 0.95){
+           id(test_fastled).turn_on().set_brightness(DimUp + 0.05).perform();
+           id(test_fastled2).turn_on().set_brightness(DimUp + 0.05).perform();
+           id(test_fastled3).turn_on().set_brightness(DimUp + 0.05).perform();
+           } else {
+           id(test_fastled).turn_on().set_brightness(1.0).perform();
+           id(test_fastled2).turn_on().set_brightness(1.0).perform();
+           id(test_fastled3).turn_on().set_brightness(1.0).perform();           
+           }
+    on_anticlockwise:
+      - lambda: |-
+         float DimDn = id(test_fastled).current_values.get_brightness();
+         if (DimDn >= 0.05) {
+           id(test_fastled).turn_on().set_brightness(DimDn - 0.05).perform();
+           id(test_fastled2).turn_on().set_brightness(DimDn - 0.05).perform();
+           id(test_fastled3).turn_on().set_brightness(DimDn - 0.05).perform();
+           } else {
+           id(test_fastled).turn_on().set_brightness(0).perform();
+           id(test_fastled2).turn_on().set_brightness(0).perform();
+           id(test_fastled3).turn_on().set_brightness(0).perform();           
+           }
+
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO33
+      mode:
+        input: true
+        pullup: true
+    id: lab_unit_button
+    name: light_switch_monitor
+    on_press:
+      - light.toggle: test_fastled
+      - light.toggle: test_fastled2
+      - light.toggle: test_fastled3
+
+button:
+  - platform: template
+    id: test_the_fastled
+    name: "volvo ledstrips"
+    on_press:
+      - script.execute: service_script
+
+light:
+  - platform: neopixelbus
+    variant: WS2812
+    pin: GPIO27
+    default_transition_length: 0s
+    num_leds: 1
+    name: "test fastled"
+    type: GRB
+    restore_mode: always_off
+    id: test_fastled
+    method:
+      type: esp32_rmt
+      channel: 3
+    on_turn_on:
+      - light.turn_on:
+          id: test_fastled
+          red: 0%
+          green: 0%
+          blue: 100%
+
+  - platform: neopixelbus
+    variant: WS2812
+    pin: GPIO32
+    default_transition_length: 0s
+    num_leds: 8
+    name: "test fastled2"
+    type: GRB
+    restore_mode: always_off
+    id: test_fastled2
+    method:
+      type: esp32_rmt
+      channel: 4
+    on_turn_on:
+        - light.turn_on:
+            id: test_fastled2
+            red: 0%
+            green: 0%
+            blue: 100%
+
+  - platform: neopixelbus
+    variant: WS2812
+    pin: GPIO25
+    default_transition_length: 0s
+    num_leds: 8
+    name: "test fastled3"
+    type: GRB
+    restore_mode: always_off
+    id: test_fastled3
+    method:
+      type: esp32_rmt
+      channel: 5
+    on_turn_on:
+        - light.turn_on:
+            id: test_fastled3
+            red: 0%
+            green: 0%
+            blue: 100%
